@@ -317,6 +317,18 @@ class BitrixFileUploadScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! UPLOAD ACCEPTED: {test_name} at {endpoint}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="File upload returned success + uploaded file accessible via URL",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                         if path:
                             self.uploaded_files.append({
@@ -353,6 +365,18 @@ class BitrixFileUploadScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! BYPASS: {technique['name']} at {endpoint}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Extension bypass technique accepted by upload handler",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
     
     def _test_content_type_bypass(self, base_url: str, endpoints: List[str], result: UploadResult):
         """Test content-type bypass"""
@@ -390,6 +414,18 @@ class BitrixFileUploadScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! CT BYPASS: {fake_type} at {endpoint}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Extension bypass technique accepted by upload handler",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         break  # One success is enough
     
     def _test_path_traversal(self, base_url: str, endpoints: List[str], result: UploadResult):
@@ -431,6 +467,18 @@ class BitrixFileUploadScanner:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"!!! TRAVERSAL: {pattern[:30]}... at {endpoint}")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="Path traversal in filename accepted, file written outside upload dir",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
     
     def _test_alternative_methods(self, base_url: str, result: UploadResult):
         """Test alternative upload methods"""
@@ -490,6 +538,18 @@ class BitrixFileUploadScanner:
                 )
                 result.add_finding(finding)
                 self.logger.critical(f"!!! EDITOR UPLOAD: {editor_url}")
+                try:
+                    _r = resp
+                    self.logger.finding_debug(
+                        url=url if "url" in dir() else "?",
+                        status_code=_r.status_code if _r else 0,
+                        trigger="WYSIWYG editor upload endpoint accessible without auth",
+                        content_len=len(_r.text) if _r else 0,
+                        matched_text=_r.text[:150] if _r else None,
+                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                    )
+                except Exception:
+                    pass
                 
         except Exception as e:
             self.logger.debug(f"Editor test error: {e}")
@@ -571,6 +631,18 @@ class BitrixFileUploadScanner:
                 
                 if resp and 'EXEC_TEST' in resp.text:
                     self.logger.critical(f"!!! CODE EXECUTION: {file_info['url']}?cmd=whoami")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="Uploaded PHP file executed successfully (marker found in response)",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
                     
                     # Update finding
                     for finding in result.findings:

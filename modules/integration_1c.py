@@ -394,6 +394,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! AUTH BYPASS: {endpoint['name']} accessible without auth!")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="1C endpoint returned data (HTTP 200 + content) without credentials",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                 
                 # Test 2: Try to initialize exchange without proper auth
                 if endpoint['type'] == 'exchange':
@@ -413,6 +425,18 @@ class Bitrix1CIntegrationScanner:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! EXCHANGE MODE {mode} without auth: {url}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="1C exchange mode endpoint accessible without auth headers",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             
                             # Try to get session ID
                             if 'sessid' in resp.text:
@@ -438,6 +462,18 @@ class Bitrix1CIntegrationScanner:
                             )
                             result.add_finding(finding)
                             self.logger.warning(f"Potential auth bypass at {url}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="1C endpoint returned unexpected status (not 401/403)",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             
                     except Exception as e:
                         self.logger.debug(f"Auth bypass test error: {e}")
@@ -477,6 +513,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! XXE in 1C Exchange: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="XXE payload in CommerceML XML returned file/entity content",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         break
                     
                     # Check for XPath injection
@@ -492,6 +540,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.warning(f"Potential XPath injection: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="XPath error in 1C XML response",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                     
                     # Check for XML parsing errors (information disclosure)
                     if self._detect_xml_errors(resp.text):
@@ -587,6 +647,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! DATA LEAK: {endpoint['name']} exposes {list(data.keys())}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="1C endpoint returned business data (products/prices/customers) without auth",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"Data leak test error: {e}")
@@ -645,6 +717,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! DIRECTORY LISTING: {path}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="1C upload dir has directory listing enabled (grep 'Index of')",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         result.exposed_endpoints.append(url)
                     
                     # Check for exposed XML files
@@ -701,6 +785,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! FILE UPLOAD: {filename} uploaded via 1C Exchange")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="File uploaded via 1C exchange endpoint and accessible",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"Upload test error: {e}")
@@ -783,6 +879,18 @@ class Bitrix1CIntegrationScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! CONFIG LEAK: {path} contains DB credentials!")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="1C config file contains DB credentials (grep DBLogin/DBPassword)",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                     
                     # Check for 1C exchange configuration
                     elif '1C_' in content or 'EXCHANGE_' in content or 'CATALOG_EXPORT' in content:

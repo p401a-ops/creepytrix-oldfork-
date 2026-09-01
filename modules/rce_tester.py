@@ -330,6 +330,18 @@ class BitrixRCETester:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! CMD INJECTION: {point['url']} | {point['param']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="OS command marker (e.g. uid=, root:, /bin/) found in response body",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         return
                         
                     # Check for blind injection (timing)
@@ -346,6 +358,18 @@ class BitrixRCETester:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! BLIND CMD INJECTION: {point['url']}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="OS command marker (e.g. uid=, root:, /bin/) found in response body",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             return
                             
                 except Exception as e:
@@ -390,6 +414,18 @@ class BitrixRCETester:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! PHP EVAL: {url}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="eval() marker (math result or phpinfo) found in response body",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             self.shell_urls.append(test_file)
                             return
                             
@@ -426,11 +462,35 @@ class BitrixRCETester:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! SSTI: {url}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Template injection marker (e.g. 49 from 7*7) found in response body",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         return
                         
                     # Check for template syntax errors (indicates template engine)
                     if any(err in resp.text.lower() for err in ['twig', 'smarty', 'template', 'syntax error', 'unexpected']):
                         self.logger.warning(f"Potential template engine at {url}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Template syntax chars ({{}}, ${}) reflected but no code execution confirmed",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"Template injection test error: {e}")
@@ -469,6 +529,18 @@ class BitrixRCETester:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! DESERIALIZATION: {point['url']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Deserialization payload triggered error/behavior change in response",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         return
                         
                 except Exception as e:
@@ -503,6 +575,18 @@ class BitrixRCETester:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"!!! KNOWN CVE: {cve['name']} at {url}")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="Known CVE endpoint returned expected vulnerable response pattern",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
                     
             except Exception as e:
                 self.logger.debug(f"CVE test error for {cve['name']}: {e}")
@@ -538,6 +622,18 @@ class BitrixRCETester:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"!!! LOG POISONING: {vector['path']}")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="Injected PHP tag via User-Agent found in log file response",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
                     return
                     
             except Exception as e:

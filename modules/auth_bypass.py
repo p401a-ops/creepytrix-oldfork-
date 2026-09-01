@@ -481,32 +481,52 @@ class BitrixAuthBypass:
             # Check if bypass worked
             bypassed = False
             evidence = None
+            trigger_detail = None
+            
+            # First: is this just a login page?
+            is_login, login_reason = self.parser.is_bitrix_login_page(resp.text) if resp else (False, "")
+            is_redir, redir_reason = self.parser.is_admin_redirect(resp) if resp else (False, "")
+            
+            if is_login or is_redir:
+                self.logger.debug(f"SKIPPED bypass '{vector['name']}' (login page FP): {login_reason or redir_reason}")
+                continue
             
             if vector['check'] == 'admin_panel':
                 if 'form_auth' not in resp.text and ('admin' in resp.text or 'bitrix' in resp.text):
                     bypassed = True
                     evidence = "Admin content accessible without auth"
+                    trigger_detail = "HTTP {s} + 'form_auth' NOT in body + ('admin' OR 'bitrix') in body".format(s=resp.status_code)
             
             elif vector['check'] == 'redirect_check':
                 if resp.status_code in [301, 302] and 'login' not in resp.headers.get('Location', ''):
                     bypassed = True
                     evidence = f"Redirect to: {resp.headers.get('Location')}"
+                    trigger_detail = f"HTTP {resp.status_code} redirect + 'login' NOT in Location header"
             
             elif vector['check'] == 'content_check':
                 if resp.status_code == 200 and len(resp.text) > 1000:
                     bypassed = True
                     evidence = "Large response without authentication"
+                    trigger_detail = f"HTTP 200 + body length {len(resp.text)} > 1000 bytes (WARNING: weak check, login pages are also >1000b)"
             
             elif vector['check'] == 'ajax_response':
                 if resp.status_code == 200 and ('json' in resp.headers.get('Content-Type', '') or 
                                                   '{' in resp.text):
                     bypassed = True
                     evidence = "AJAX endpoint responded without auth"
+                    ct = resp.headers.get('Content-Type', '')
+                    has_json_ct = 'json' in ct
+                    has_brace = '{' in resp.text
+                    trigger_detail = f"HTTP 200 + json_content_type={has_json_ct} + open_brace_in_body={has_brace}"
             
             elif vector['check'] == 'backup_tool':
                 if resp.status_code == 200 and ('restore' in resp.text or 'backup' in resp.text):
                     bypassed = True
                     evidence = "Backup restore tool accessible"
+                    matches = []
+                    if 'restore' in resp.text: matches.append("'restore'")
+                    if 'backup' in resp.text: matches.append("'backup'")
+                    trigger_detail = f"HTTP 200 + grep: {' + '.join(matches)} in body (WARNING: login page may contain these words)"
             
             if bypassed:
                 finding = AuthFinding(
@@ -519,6 +539,14 @@ class BitrixAuthBypass:
                 )
                 result.add_finding(finding)
                 self.logger.critical(f"!!! BYPASS FOUND: {vector['name']} at {url}")
+                self.logger.finding_debug(
+                    url=url, status_code=resp.status_code,
+                    trigger=trigger_detail,
+                    content_len=len(resp.text),
+                    matched_text=resp.text[:150],
+                    headers={'Content-Type': resp.headers.get('Content-Type', '?'),
+                             **({'Location': resp.headers['Location']} if 'Location' in resp.headers else {})}
+                )
     
     def _test_api_auth(self, base_url: str, result: AuthResult):
         """Test API endpoint authentication"""
@@ -534,6 +562,11 @@ class BitrixAuthBypass:
             if resp.status_code == 200:
                 content = resp.text
                 
+                # Skip login pages
+                is_login, _ = self.parser.is_bitrix_login_page(content)
+                if is_login:
+                    continue
+                
                 # Check if it's actually data (not auth error)
                 if len(content) > 100 and 'error' not in content.lower():
                     finding = AuthFinding(
@@ -546,6 +579,14 @@ class BitrixAuthBypass:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"!!! OPEN API: {url}")
+                    has_error = 'error' in content.lower()
+                    self.logger.finding_debug(
+                        url=url, status_code=200,
+                        trigger=f"HTTP 200 + body {len(content)} > 100 bytes + 'error' NOT in body (error_present={has_error})",
+                        content_len=len(content),
+                        matched_text=content[:150],
+                        headers={'Content-Type': resp.headers.get('Content-Type', '?')}
+                    )
                 
                 elif 'error' in content.lower() and 'auth' in content.lower():
                     # Check what auth methods accepted

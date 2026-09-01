@@ -12,7 +12,6 @@ __modules__ = [
     'info_disclosure', 
     'auth_bypass', 
     'sqli_scanner', 
-    'xss_scanner', 
     'file_upload', 
     'rce_tester',
     'xxe_ssrf',
@@ -26,7 +25,6 @@ from .recon import BitrixRecon, ReconResult
 from .info_disclosure import BitrixInfoDisclosure, DisclosureResult, DisclosureFinding
 from .auth_bypass import BitrixAuthBypass, AuthResult, AuthFinding
 from .sqli_scanner import BitrixSQLiScanner, SQLiResult, SQLiFinding
-from .xss_scanner import BitrixXSSScanner, XSSResult, XSSFinding
 from .file_upload import BitrixFileUploadScanner, UploadResult, UploadFinding
 from .rce_tester import BitrixRCETester, RCEResult, RCEFinding
 from .xxe_ssrf import BitrixXXESSRFScanner, XXESSRFResult, XXESSRFFinding
@@ -50,10 +48,6 @@ __all__ = [
     'BitrixSQLiScanner',
     'SQLiResult',
     'SQLiFinding',
-    # XSS
-    'BitrixXSSScanner',
-    'XSSResult',
-    'XSSFinding',
     # File Upload
     'BitrixFileUploadScanner',
     'UploadResult',

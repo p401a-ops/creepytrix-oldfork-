@@ -412,6 +412,18 @@ class BitrixExcelRCEScanner:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! FORMULA INJECTION: {endpoint['name']} param={param}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="Excel formula (=CMD) in export not sanitized, reflected in downloaded file",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             
                     except Exception as e:
                         self.logger.debug(f"Formula injection test error: {e}")
@@ -466,6 +478,18 @@ class BitrixExcelRCEScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! CSV INJECTION: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="CSV export contains unescaped formula-triggering characters (=, +, @)",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"CSV injection test error: {e}")
@@ -507,6 +531,18 @@ class BitrixExcelRCEScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! POWER QUERY RCE: External data connection accepted")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="External data connection in uploaded XLSX was processed by server",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
             except Exception as e:
                 self.logger.debug(f"Power Query test error: {e}")
@@ -562,6 +598,18 @@ class BitrixExcelRCEScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! DDE INJECTION: {endpoint['name']} field={test_case['field']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="DDE payload accepted and present in exported document",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"DDE test error: {e}")
@@ -614,6 +662,18 @@ class BitrixExcelRCEScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! XXE via EXCEL: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="XXE in XLSX (docProps/core.xml) returned external entity content",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
             except Exception as e:
                 self.logger.debug(f"XXE Excel test error: {e}")
@@ -710,6 +770,18 @@ class BitrixExcelRCEScanner:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"!!! MACRO INJECTION: {endpoint['name']} accepts XLSM files")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="Server accepted XLSM file upload (macros enabled)",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
                     
             except Exception as e:
                 self.logger.debug(f"Macro test error: {e}")

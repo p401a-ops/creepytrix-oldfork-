@@ -117,6 +117,7 @@ class BitrixInfoDisclosure:
         # Other configs
         ('/bitrix/modules/main/classes/general/version.php', 'info', 'Version info'),
         ('/bitrix/modules/main/lib/version.php', 'info', 'D7 Version info'),
+        ('/bitrix/legal/license.php', 'info', 'Bitrix license info — edition'),
         ('/composer.json', 'low', 'Composer dependencies'),
         ('/composer.lock', 'low', 'Composer lock file'),
         ('/package.json', 'low', 'Node.js dependencies'),
@@ -340,7 +341,17 @@ class BitrixInfoDisclosure:
                 content = resp.text
                 
                 # Check if it's really a config, not 404 page
-                if self._is_valid_config(content, path):
+                # Some paths just need 200 + content + not login page
+                is_login, _ = self.parser.is_bitrix_login_page(content)
+                if is_login:
+                    self.logger.debug(f"SKIPPED (login page): {path}")
+                    continue
+                
+                if not self._is_valid_config(content, path) and '/legal/' not in path:
+                    continue
+                
+                if len(content.strip()) < 10:
+                    continue
                     evidence = self._extract_config_snippet(content, path)
                     
                     finding = DisclosureFinding(
@@ -353,6 +364,15 @@ class BitrixInfoDisclosure:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"CONFIG EXPOSED: {path}") if severity == 'critical' else self.logger.warning(f"Config exposed: {path}")
+                    # Debug: _is_valid_config requires len>50 + at least 2 of: <?php, return array, connections, database, host, password, DBLogin, DBPassword
+                    config_patterns = ['<?php','return array','connections','database','host','password','DBLogin','DBPassword']
+                    matched = [p for p in config_patterns if p.lower() in content.lower()]
+                    self.logger.finding_debug(
+                        url=url, status_code=200,
+                        trigger=f"HTTP 200 + _is_valid_config: matched {len(matched)}/8 patterns: {matched}",
+                        content_len=len(content),
+                        matched_text=content[:150]
+                    )
                     
                     # Special handling for .settings.php to extract DB info
                     if 'settings.php' in path:
@@ -377,6 +397,12 @@ class BitrixInfoDisclosure:
                     continue
                 
                 if resp.status_code in [200, 301, 302, 307]:
+                    # Skip redirects to login page
+                    is_redir, redir_reason = self.parser.is_admin_redirect(resp)
+                    if is_redir:
+                        self.logger.debug(f"SKIPPED backup (login redirect FP): {path} — {redir_reason}")
+                        continue
+                    
                     # Check if it's directory listing
                     if self._is_directory_listing(resp.text):
                         finding = DisclosureFinding(
@@ -389,6 +415,15 @@ class BitrixInfoDisclosure:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"BACKUP DIR EXPOSED: {path}")
+                        # Debug: matched one of: 'Index of', 'Directory Listing', 'Parent Directory', etc.
+                        indicators = ['<title>Index of','Directory Listing','<h1>Index of','Parent Directory','Last modified</a>','Size</a>']
+                        matched_ind = [i for i in indicators if i in resp.text]
+                        self.logger.finding_debug(
+                            url=check_url, status_code=resp.status_code,
+                            trigger=f"HTTP {resp.status_code} + dir listing grep: {matched_ind}",
+                            content_len=len(resp.text),
+                            matched_text=resp.text[:150]
+                        )
                     
                     # Check if it's actual file
                     elif resp.status_code == 200 and len(resp.content) > 100:
@@ -404,6 +439,12 @@ class BitrixInfoDisclosure:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"BACKUP FILE FOUND: {path} ({len(resp.content)} bytes)")
+                            self.logger.finding_debug(
+                                url=check_url, status_code=200,
+                                trigger=f"HTTP 200 + body > 100 bytes + Content-Type contains sql/gz/zip/tar",
+                                content_len=len(resp.content),
+                                headers={'Content-Type': content_type}
+                            )
     
     def _check_logs(self, base_url: str, result: DisclosureResult):
         """Check for exposed log files"""
@@ -555,6 +596,12 @@ class BitrixInfoDisclosure:
             if resp.status_code == 200:
                 content = resp.text
                 
+                # Skip if this is just a login page
+                is_login, login_reason = self.parser.is_bitrix_login_page(content)
+                if is_login:
+                    self.logger.debug(f"SKIPPED 1C (login page FP): {path} — {login_reason}")
+                    continue
+                
                 # Check if it's actual exchange endpoint without auth
                 if '1C' in content or 'exchange' in content.lower() or 'CommerceML' in content:
                     finding = DisclosureFinding(
@@ -567,6 +614,17 @@ class BitrixInfoDisclosure:
                     )
                     result.add_finding(finding)
                     self.logger.critical(f"1C EXCHANGE EXPOSED: {path}")
+                    matches = []
+                    if '1C' in content: matches.append("'1C' in body")
+                    if 'exchange' in content.lower(): matches.append("'exchange' in body (case-insensitive)")
+                    if 'CommerceML' in content: matches.append("'CommerceML' in body")
+                    self.logger.finding_debug(
+                        url=url, status_code=200,
+                        trigger=f"HTTP 200 + grep: {', '.join(matches)}",
+                        content_len=len(content),
+                        matched_text=content[:150],
+                        headers={'Content-Type': resp.headers.get('Content-Type', '?')}
+                    )
             
             elif resp.status_code == 401:
                 self.logger.info(f"1C Exchange protected (401): {path}")

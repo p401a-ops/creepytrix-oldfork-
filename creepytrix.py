@@ -3,7 +3,7 @@
 """
 Bitrix Pentest Tool v1.1
 Main entry point for the penetration testing tool
-Modules: Recon | Info Disclosure | Auth Bypass | SQLi | XSS | Upload | RCE | XXE/SSRF | 1C Integration | Excel RCE | API Scanner
+Modules: Recon | Info Disclosure | Auth Bypass | SQLi | Upload | RCE | XXE/SSRF | 1C Integration | Excel RCE | API Scanner
 Based on: https://pentestnotes.ru/notes/bitrix_pentest_full/
 """
 
@@ -19,7 +19,7 @@ from modules.recon import BitrixRecon, ReconResult
 from modules.info_disclosure import BitrixInfoDisclosure, DisclosureResult
 from modules.auth_bypass import BitrixAuthBypass, AuthResult
 from modules.sqli_scanner import BitrixSQLiScanner, SQLiResult
-from modules.xss_scanner import BitrixXSSScanner, XSSResult
+# XSS module removed
 from modules.file_upload import BitrixFileUploadScanner, UploadResult
 from modules.rce_tester import BitrixRCETester, RCEResult
 from modules.xxe_ssrf import BitrixXXESSRFScanner, XXESSRFResult
@@ -42,7 +42,6 @@ Modules:
   disclosure   - Information Disclosure (configs, backups, logs)
   auth         - Authentication Bypass (default creds, session issues)
   sqli         - SQL Injection Scanner (error, boolean, time, union-based)
-  xss          - XSS Scanner (reflected, stored, DOM-based, blind)
   upload       - File Upload Scanner (arbitrary, bypass, traversal, race)
   rce          - RCE Tester (command injection, code eval, known CVEs)
   xxe_ssrf     - XXE/SSRF Scanner (XML External Entity, Server-Side Request Forgery)
@@ -69,7 +68,7 @@ Examples:
     
     parser.add_argument(
         '-m', '--module',
-        choices=['all', 'recon', 'disclosure', 'auth', 'sqli', 'xss', 'upload', 'rce', 'xxe_ssrf', '1c', 'excel', 'api'],
+        choices=['all', 'recon', 'disclosure', 'auth', 'sqli', 'upload', 'rce', 'xxe_ssrf', '1c', 'excel', 'api'],
         default='all',
         help='Module to run (default: all)'
     )
@@ -146,7 +145,7 @@ def print_banner(logger: ColoredLogger):
                                                                         
                                                         
     Bitrix Security Testing Tool v1.1 by KL3FT3Z (https://github.com/V3kt0r39)
-    Modules: Recon | Info Disclosure | Auth Bypass | SQLi | XSS | Upload | RCE | XXE/SSRF | 1C | Excel RCE | API
+    Modules: Recon | Info Disclosure | Auth Bypass | SQLi | Upload | RCE | XXE/SSRF | 1C | Excel RCE | API
     Based on: https://pentestnotes.ru/notes/bitrix_pentest_full/
     """
     logger.info(banner)
@@ -219,22 +218,6 @@ def print_sqli_results(result: SQLiResult, logger: ColoredLogger):
     
     if summary['critical'] > 0:
         logger.critical(f"CRITICAL: {summary['critical']}")
-    
-    logger.info(f"\nTotal Findings: {summary['total_findings']}")
-
-
-def print_xss_results(result: XSSResult, logger: ColoredLogger):
-    """Print XSS results"""
-    logger.info("=" * 60)
-    logger.info("XSS SCAN RESULTS")
-    logger.info("=" * 60)
-    
-    summary = result.to_dict()['summary']
-    
-    if summary['critical'] > 0:
-        logger.critical(f"CRITICAL: {summary['critical']}")
-    if summary['high'] > 0:
-        logger.error(f"HIGH: {summary['high']}")
     
     logger.info(f"\nTotal Findings: {summary['total_findings']}")
 
@@ -492,7 +475,7 @@ def main():
             logger.info("STARTING RECONNAISSANCE MODULE")
             logger.info("=" * 60)
             
-            recon = BitrixRecon(requester, logger)
+            recon = BitrixRecon(requester, logger, parser)
             recon_result = recon.scan(target, aggressive=args.aggressive)
             all_results['modules']['reconnaissance'] = recon_result.to_dict()
             print_recon_results(recon_result, logger)
@@ -529,17 +512,6 @@ def main():
             sqli_result = sqli.scan(target, aggressive=args.aggressive)
             all_results['modules']['sql_injection'] = sqli_result.to_dict()
             print_sqli_results(sqli_result, logger)
-        
-        # XSS Module
-        if args.module in ['all', 'xss']:
-            logger.info("\n" + "=" * 60)
-            logger.info("STARTING XSS SCANNER MODULE")
-            logger.info("=" * 60)
-            
-            xss = BitrixXSSScanner(requester, logger, parser)
-            xss_result = xss.scan(target, aggressive=args.aggressive)
-            all_results['modules']['xss'] = xss_result.to_dict()
-            print_xss_results(xss_result, logger)
         
         # FILE UPLOAD Module
         if args.module in ['all', 'upload']:

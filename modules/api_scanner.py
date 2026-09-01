@@ -383,6 +383,18 @@ class BitrixAPIScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! UNPROTECTED API: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="API endpoint returned data (HTTP 200 + body) without any auth",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                     
                     # Try to detect API version
                     self._detect_api_version(resp, result)
@@ -482,6 +494,18 @@ class BitrixAPIScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! REST AUTH BYPASS: {url}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="REST endpoint accessible with manipulated/empty auth token",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                 except:
                     pass
                     
@@ -516,6 +540,18 @@ class BitrixAPIScanner:
                 )
                 result.add_finding(finding)
                 self.logger.critical(f"!!! SOAP AUTH BYPASS: {url}")
+                try:
+                    _r = resp
+                    self.logger.finding_debug(
+                        url=url if "url" in dir() else "?",
+                        status_code=_r.status_code if _r else 0,
+                        trigger="SOAP endpoint returned WSDL or data without auth",
+                        content_len=len(_r.text) if _r else 0,
+                        matched_text=_r.text[:150] if _r else None,
+                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                    )
+                except Exception:
+                    pass
                 
         except Exception as e:
             self.logger.debug(f"SOAP auth test error: {e}")
@@ -551,6 +587,18 @@ class BitrixAPIScanner:
                                     )
                                     result.add_finding(finding)
                                     self.logger.critical(f"!!! IDOR: Access to user {test_id} at {test_url}")
+                                    try:
+                                        _r = resp
+                                        self.logger.finding_debug(
+                                            url=url if "url" in dir() else "?",
+                                            status_code=_r.status_code if _r else 0,
+                                            trigger="Accessed another user's data by incrementing/changing object ID",
+                                            content_len=len(_r.text) if _r else 0,
+                                            matched_text=_r.text[:150] if _r else None,
+                                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                        )
+                                    except Exception:
+                                        pass
                             except:
                                 pass
                                 
@@ -584,6 +632,18 @@ class BitrixAPIScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! SQLi in API: {test_url}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="SQL error string found in API response to injection payload",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         break
                         
                 except Exception as e:
@@ -614,6 +674,18 @@ class BitrixAPIScanner:
                                 )
                                 result.add_finding(finding)
                                 self.logger.critical(f"!!! NoSQLi in API: {test_url}")
+                                try:
+                                    _r = resp
+                                    self.logger.finding_debug(
+                                        url=url if "url" in dir() else "?",
+                                        status_code=_r.status_code if _r else 0,
+                                        trigger="SQL error string found in API response to injection payload",
+                                        content_len=len(_r.text) if _r else 0,
+                                        matched_text=_r.text[:150] if _r else None,
+                                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                    )
+                                except Exception:
+                                    pass
                                 break
                         except:
                             pass
@@ -678,6 +750,18 @@ class BitrixAPIScanner:
                                 )
                                 result.add_finding(finding)
                                 self.logger.warning(f"Potential mass assignment: {field}")
+                                try:
+                                    _r = resp
+                                    self.logger.finding_debug(
+                                        url=url if "url" in dir() else "?",
+                                        status_code=_r.status_code if _r else 0,
+                                        trigger="Server accepted unexpected field (e.g. is_admin) in request body",
+                                        content_len=len(_r.text) if _r else 0,
+                                        matched_text=_r.text[:150] if _r else None,
+                                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                    )
+                                except Exception:
+                                    pass
                         except:
                             pass
                             
@@ -747,6 +831,18 @@ class BitrixAPIScanner:
                                 )
                                 result.add_finding(finding)
                                 self.logger.critical(f"!!! WEAK JWT SECRET: {secret}")
+                                try:
+                                    _r = resp
+                                    self.logger.finding_debug(
+                                        url=url if "url" in dir() else "?",
+                                        status_code=_r.status_code if _r else 0,
+                                        trigger="JWT signature verified with common weak secret from wordlist",
+                                        content_len=len(_r.text) if _r else 0,
+                                        matched_text=_r.text[:150] if _r else None,
+                                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                    )
+                                except Exception:
+                                    pass
                                 break
                             except:
                                 pass
@@ -766,6 +862,18 @@ class BitrixAPIScanner:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! JWT NONE ALGORITHM at {api['name']}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="JWT with alg:none accepted by server",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             
                     except Exception as e:
                         self.logger.debug(f"JWT test error: {e}")
@@ -828,6 +936,18 @@ class BitrixAPIScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! GraphQL exposes sensitive fields")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="GraphQL introspection returned sensitive field names",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                 
                 # Test for query depth limit
                 deep_query = '''
@@ -907,6 +1027,18 @@ class BitrixAPIScanner:
                     )
                     result.add_finding(finding)
                     self.logger.warning(f"Potential API key exposure at {api['name']}")
+                    try:
+                        _r = resp
+                        self.logger.finding_debug(
+                            url=url if "url" in dir() else "?",
+                            status_code=_r.status_code if _r else 0,
+                            trigger="API key/token found in response body (grep pattern match)",
+                            content_len=len(_r.text) if _r else 0,
+                            matched_text=_r.text[:150] if _r else None,
+                            headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                        )
+                    except Exception:
+                        pass
     
     def _check_api_docs(self, base_url: str, result: APIResult):
         """Check for exposed API documentation"""

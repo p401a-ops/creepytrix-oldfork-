@@ -347,6 +347,18 @@ class BitrixXXESSRFScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! XXE: {payload_name} at {endpoint}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="XXE payload returned file content (e.g. /etc/passwd) in response",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         break  # Found XXE, move to next endpoint
                         
                     # Check for error-based XXE
@@ -362,6 +374,18 @@ class BitrixXXESSRFScanner:
                         )
                         result.add_finding(finding)
                         self.logger.warning(f"Potential XXE (error-based): {endpoint}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="XML parsing error suggests entity processing is enabled",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                 except Exception as e:
                     self.logger.debug(f"XXE test error: {e}")
@@ -464,6 +488,18 @@ class BitrixXXESSRFScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! SSRF: {point['url']} -> {payload}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="SSRF payload triggered response from internal host/metadata endpoint",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                         
                         # Extract internal service info
                         self._extract_service_info(resp, payload, result)
@@ -580,6 +616,18 @@ class BitrixXXESSRFScanner:
                         )
                         result.add_finding(finding)
                         self.logger.critical(f"!!! BITRIX XXE: {endpoint['name']}")
+                        try:
+                            _r = resp
+                            self.logger.finding_debug(
+                                url=url if "url" in dir() else "?",
+                                status_code=_r.status_code if _r else 0,
+                                trigger="Bitrix-specific XML endpoint processed external entity",
+                                content_len=len(_r.text) if _r else 0,
+                                matched_text=_r.text[:150] if _r else None,
+                                headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                            )
+                        except Exception:
+                            pass
                 
                 elif endpoint['content_type'] == 'url':
                     # Test SSRF
@@ -598,6 +646,18 @@ class BitrixXXESSRFScanner:
                             )
                             result.add_finding(finding)
                             self.logger.critical(f"!!! BITRIX SSRF: {endpoint['name']}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="Bitrix RSS/URL endpoint fetched attacker-controlled URL",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             break
                             
             except Exception as e:
@@ -607,6 +667,18 @@ class BitrixXXESSRFScanner:
         """Test for blind XXE using OOB technique"""
         if not self.oob_server:
             self.logger.warning("No OOB server configured, skipping blind XXE tests")
+            try:
+                _r = resp
+                self.logger.finding_debug(
+                    url=url if "url" in dir() else "?",
+                    status_code=_r.status_code if _r else 0,
+                    trigger="Blind XXE payload sent — check OOB/callback server for confirmation",
+                    content_len=len(_r.text) if _r else 0,
+                    matched_text=_r.text[:150] if _r else None,
+                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                )
+            except Exception:
+                pass
             return
         
         # Generate unique identifier
@@ -636,6 +708,18 @@ class BitrixXXESSRFScanner:
                 )
                 result.add_finding(finding)
                 self.logger.warning(f"Potential blind XXE (check OOB): {endpoint}")
+                try:
+                    _r = resp
+                    self.logger.finding_debug(
+                        url=url if "url" in dir() else "?",
+                        status_code=_r.status_code if _r else 0,
+                        trigger="Blind XXE payload sent — check OOB/callback server for confirmation",
+                        content_len=len(_r.text) if _r else 0,
+                        matched_text=_r.text[:150] if _r else None,
+                        headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                    )
+                except Exception:
+                    pass
                 
             except Exception as e:
                 self.logger.debug(f"Blind XXE test error: {e}")
@@ -674,6 +758,18 @@ class BitrixXXESSRFScanner:
                             )
                             result.add_finding(finding)
                             self.logger.warning(f"Potential XPath injection: {point}")
+                            try:
+                                _r = resp
+                                self.logger.finding_debug(
+                                    url=url if "url" in dir() else "?",
+                                    status_code=_r.status_code if _r else 0,
+                                    trigger="XPath error message found in response to XPath payload",
+                                    content_len=len(_r.text) if _r else 0,
+                                    matched_text=_r.text[:150] if _r else None,
+                                    headers={"Content-Type": _r.headers.get("Content-Type", "?")} if _r else None
+                                )
+                            except Exception:
+                                pass
                             
                 except Exception as e:
                     self.logger.debug(f"XPath test error: {e}")

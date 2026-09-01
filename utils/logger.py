@@ -191,6 +191,32 @@ class ColoredLogger:
         if self.level <= logging.CRITICAL:
             self._log('CRITICAL', message, logging.CRITICAL)
     
+    def finding_debug(self, url: str, status_code: int, trigger: str,
+                      matched_text: str = None, content_len: int = None,
+                      headers: dict = None):
+        """
+        Detailed debug context printed alongside every CRITICAL/WARNING finding.
+        Always printed regardless of log level so the operator can judge
+        whether a finding is a true positive.
+        """
+        lines = [
+            f"  ┌─ DEBUG CONTEXT ─────────────────────────────",
+            f"  │ url:         {url}",
+            f"  │ status:      HTTP {status_code}",
+            f"  │ trigger:     {trigger}",
+        ]
+        if content_len is not None:
+            lines.append(f"  │ body_len:    {content_len} bytes")
+        if matched_text is not None:
+            safe = matched_text[:150].replace('\n', ' ').replace('\r', '')
+            lines.append(f"  │ matched:     {safe}")
+        if headers:
+            for k, v in headers.items():
+                lines.append(f"  │ hdr[{k}]: {v}")
+        lines.append(f"  └──────────────────────────────────────────")
+        for line in lines:
+            self._log('DEBUG', line, logging.DEBUG)
+
     def exception(self, message: str):
         """Log exception with traceback"""
         import traceback

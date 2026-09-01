@@ -194,7 +194,7 @@ class BitrixParser:
             })
         
         # Oracle errors
-        ora_pattern = r'(ORA-\d+.*?)'
+        ora_pattern = r'ORA-\d+[^\r\n<]*'
         for match in re.finditer(ora_pattern, content):
             errors.append({
                 'type': 'Oracle',
@@ -412,6 +412,158 @@ class BitrixParser:
         
         return False, ""
     
+    def is_bitrix_login_page(self, content: str, headers: dict = None) -> tuple[bool, str]:
+        """
+        Detect Bitrix / Bitrix admin authentication page.
+
+        Returns:
+            Tuple of (is_login_page, reason).
+        """
+        if not content:
+            return False, "empty response"
+
+        html = content.lower()
+	
+	# ---------------------------------------------------------
+        # 0. Title check — most reliable signal
+        # ---------------------------------------------------------
+        if '<title>авторизация</title>' in html:
+            return True, "page title is 'Авторизация'"
+	
+	
+        # ---------------------------------------------------------
+        # 1. Strong Bitrix Admin signatures
+        # ---------------------------------------------------------
+        admin_signatures = (
+            'id="bx-admin-prefix"',
+            'bx-admin-auth-form',
+            'bx.adminlogin',
+            'core_admin_login',
+            'authformauthorize',
+            '/bitrix/panel/main/login',
+            '/bitrix/tools/upload.php',
+        )
+
+        # Any of these is highly specific to Bitrix admin login.
+        if any(signature in html for signature in admin_signatures):
+            return True, "strong Bitrix admin login signature"
+
+        # ---------------------------------------------------------
+        # 2. Strong Bitrix public/login signatures
+        # ---------------------------------------------------------
+        public_login_signatures = (
+            'name="auth_form"',
+            'name="type" value="auth"',
+            '/bitrix/templates/login/',
+            '/bitrix/cache/css/',
+            'log-popup-form-input',
+            'login-wrapper-inputs',
+            'bx_auth_qr_code',
+        )
+
+        public_matches = sum(
+            signature in html
+            for signature in public_login_signatures
+        )
+
+        # Multiple Bitrix-specific login signatures.
+        if public_matches >= 2:
+            return True, "multiple Bitrix public login signatures"
+
+        # ---------------------------------------------------------
+        # 3. Bitrix login form structure
+        # ---------------------------------------------------------
+        has_user_login = (
+            'name="user_login"' in html
+        )
+
+        has_user_password = (
+            'name="user_password"' in html
+        )
+
+        has_auth_form = (
+            'name="auth_form"' in html
+            or 'bx-admin-auth-form' in html
+        )
+
+        has_bitrix_context = (
+            '/bitrix/' in html
+            or 'bitrix_sessid' in html
+            or 'bx.runtime' in html
+            or 'bx.message' in html
+        )
+
+        # USER_LOGIN + USER_PASSWORD is not enough by itself.
+        # They must occur together with Bitrix-specific context.
+        if (
+            has_user_login
+            and has_user_password
+            and has_bitrix_context
+            and has_auth_form
+        ):
+            return True, "Bitrix login form with credentials and context"
+
+        # ---------------------------------------------------------
+        # 4. AUTH_FORM + Bitrix context + credentials
+        # ---------------------------------------------------------
+        if (
+            has_auth_form
+            and has_bitrix_context
+            and (
+                has_user_login
+                or has_user_password
+            )
+        ):
+            return True, "Bitrix auth form with Bitrix context"
+
+        # ---------------------------------------------------------
+        # 5. Meta-refresh specifically to Bitrix admin
+        # ---------------------------------------------------------
+        if (
+            '<meta http-equiv="refresh"' in html
+            and '/bitrix/admin/' in html
+        ):
+            return True, "meta-refresh to Bitrix admin"
+    
+        # ---------------------------------------------------------
+        # 6. access_denied PAGE
+        # ---------------------------------------------------------
+    
+        access_denied = (
+            'доступ запрещен' in html
+            or 'access denied' in html
+            or 'нет прав' in html
+        )
+        if access_denied and has_bitrix_context:
+            return True, "Bitrix access denied page"
+    
+    
+    
+        return False, "not identified as Bitrix login page"
+        
+        
+        
+        
+        
+    def is_admin_redirect(self, resp):
+        if not resp:
+            return False, ""
+
+        if resp.status_code in (301, 302, 303, 307, 308):
+            location = resp.headers.get("Location", "")
+
+            parsed = urlparse(location)
+            path = parsed.path.lower()
+
+            # Только конкретный Bitrix admin path
+            if (
+                path == "/bitrix/admin"
+                or path.startswith("/bitrix/admin/")
+            ):
+                return True, f"Bitrix admin redirect: {location}"
+
+        return False, ""
+
     def extract_paths_from_robots(self, content: str) -> List[str]:
         """Extract paths from robots.txt"""
         paths = []
