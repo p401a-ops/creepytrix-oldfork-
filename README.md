@@ -1,4 +1,4 @@
-# 🔒 CREEPYTRIX - Bitrix Pentest Tool v1.1
+# FORK PROJECT OF CREEPYTRIX - Bitrix Pentest Tool v1.1
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/toxy4ny/creepytrix)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/downloads/)
